@@ -1,0 +1,75 @@
+version: "3.9"
+
+services:
+  db:
+    build: ./db
+    ports:
+      - "5434:5432"
+    environment:
+      - POSTGRES_NAME=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    restart: always
+    healthcheck:
+      test: [ "CMD", "su", "-", "postgres", "-c", "pg_isready" ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    volumes:
+      - postgres_db:/var/lib/postgresql/data
+
+  scheduler:
+    build: .
+    restart: always
+    command:
+      - scheduler
+    env_file:
+      - ./airflow.env
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [ "CMD-SHELL", 'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"' ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+
+  webserver:
+    build: .
+    restart: always
+    command: webserver
+    env_file:
+      - ./airflow.env
+    depends_on:
+      db:
+        condition: service_healthy
+      scheduler:
+        condition: service_healthy
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+    ports:
+      - "8181:8080"
+
+  airflow-init:
+    build: .
+    env_file:
+      - ./airflow.env
+    entrypoint: /bin/bash
+    restart: on-failure
+    command: -c "airflow db init && airflow users create --firstname admin --lastname admin --email admin --password admin --username admin --role Admin && exec /entrypoint airflow version"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./scripts:/opt/airflow/scripts
+      - ./logs:/opt/airflow/logs
+      - ./files:/opt/airflow/files
+      - ./src:/src
+
+volumes:
+  postgres_db:
