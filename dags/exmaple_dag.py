@@ -51,3 +51,25 @@ for i in range(5):
 
     run_this >> task
 
+
+def test_function(**kwargs):
+    return 1
+
+
+task2 = PythonOperator(
+        task_id='some_task_id',
+        python_callable=test_function,
+        op_kwargs={'random_key': 'random_value'},
+        dag=dag,
+    )
+
+task3 = PythonOperator(
+        task_id='some_task_id2',
+        python_callable=test_function,
+        op_kwargs={'random_key2': 'random_value2'},
+        dag=dag,
+    )
+
+
+task2 >> task3
+
