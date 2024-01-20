@@ -8,12 +8,11 @@ RUN apk add --no-cache postgresql postgresql-contrib &&\
 
 RUN apk add --no-cache bash su-exec
 
-COPY ./ ./
-RUN chmod 777 "db_init.sh"
-RUN cp db_init.sh /usr/local/bin/db_init.sh
+COPY ./db_init.sh /usr/local/bin/db_init.sh
+RUN chmod +x /usr/local/bin/db_init.sh
 
 ENV PGDATA /var/lib/postgresql/data
-RUN mkdir -p "$PGDATA" && chown -R postgres:postgres "$PGDATA" && chmod 777 "$PGDATA"
+RUN mkdir -p "$PGDATA" && chown -R postgres:postgres "$PGDATA" && chmod 700 "$PGDATA"
 
 VOLUME /var/lib/postgresql/data
 ENTRYPOINT ["db_init.sh"]
