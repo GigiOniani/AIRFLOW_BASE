@@ -1,5 +1,8 @@
 #!/usr/bin/ bash
 
+PGDATA="/var/lib/postgresql/data"
+export PGDATA
+
 echo "hello from postgresql"
 
 if [ "$1" = 'postgres' ]; then
